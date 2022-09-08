@@ -25,8 +25,8 @@ try {
 	if (!(Test-Path $intuneWinTool)) {
 		throw "IntuneWinAppUtil was not found at '$intuneWinTool'."
 	}
-	if ($inventory.name -notcontains "install.ps1") {
-		throw "Did not find installation file: 'install.ps1'."
+	if ($inventory.name -notcontains $installationFile) {
+		throw "Did not find installation file: '$installationFile'."
 	}
 	
 	# Temporarily move specific files to temp folder
