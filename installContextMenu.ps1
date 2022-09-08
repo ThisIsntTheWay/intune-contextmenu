@@ -1,13 +1,18 @@
-﻿# Register a filex explorer context menu entry for a FOLDER.
+﻿# Register an explorer.exe context menu option to package intunewin packages.
 # V. Klopfenstein - September 2022
 
 Param(
-	[switch] $UseAlternateFilePath
+	[switch] $UseAlternateFilePath,
+	[string] $InstallationTarget = "C:\Support"
 )
 
 $baseReg = "HKCR:\Directory\Background\shell\"
-$installationSource = "C:\Support"
-# IMPORTANT: DO NOT ADD A \ TO THE END OF THE PATH
+
+# Trim last character from $IntallationTarget if it's a \
+if ($InstallationTarget[-1] -eq '\') {
+	$InstallationTarget = $InstallationTarget.substring(0, $InstallationTarget.length -1)
+}
+$InstallationTarget
 
 try {
 	# Check if is elevated
@@ -17,25 +22,22 @@ try {
 		throw "Script not elevated."
 	}
 	
-	Write-Host "[i] Files will be installed to '$installationSource'" -f cyan
-	if ((Read-Host "Continue? (y/N)") -ne "y") {
-		throw "User has aborted the installation."
-	}
+	Write-Host "[i] Files will be installed into '$InstallationTarget'" -f cyan
 	
     # Install data
-    if (!(Test-Path $installationSource)) {
-        Write-host "Creating $installationSource..." -f yellow
-        mkdir $installationSource | out-null
+    if (!(Test-Path $InstallationTarget)) {
+        Write-host "Creating $InstallationTarget..." -f yellow
+        mkdir $InstallationTarget | out-null
     }
 
     # Unzip shit
-    Write-Host "Extracting data to $installationSource..." -f yellow
-    Expand-Archive .\data.zip $installationSource -Force | out-null
+    Write-Host "Extracting data to $InstallationTarget..." -f yellow
+    Expand-Archive .\data.zip $InstallationTarget -Force | out-null
 	
-	# Add $installationSource to contextScript.ps1
-	$target = "$installationSource\contextScript.ps1"
+	# Add $InstallationTarget to contextScript.ps1
+	$target = "$InstallationTarget\contextScript.ps1"
     Write-Host "Adjusting '$target'..." -f yellow
-	$t = (Get-Content "$target") -replace "%REPLACEME%", "$installationSource\IntuneWinAppUtil.exe"
+	$t = (Get-Content "$target") -replace "%REPLACEME%", "$InstallationTarget\IntuneWinAppUtil.exe"
 	$t | Out-File $target -Encoding UTF8
 
     Write-Host "Mapping HKCR..." -f yellow
@@ -49,19 +51,19 @@ try {
 		New-Item "$baseReg\IntuneCreation" -name "command" | out-null
 	}
 
-    # Transform $installationSource so that backslashes get properly escaped in CMD
-    $installationSource = $installationSource -replace [regex]::escape('\'), [regex]::escape('\')
+    # Transform $InstallationTarget so that backslashes get properly escaped in CMD
+    $InstallationTarget = $InstallationTarget -replace [regex]::escape('\'), [regex]::escape('\')
     
     Write-Host "Setting properties..." -f yellow
-    Write-Host "> NOTE: If powershell reports illegal characters in -file, launch this script with -UseAlternateFilePath." -f yellow
+    Write-Host "> NOTE: If powershell reports 'illegal characters in -file', launch this script with -UseAlternateFilePath." -f yellow
 	if ($UseAlternateFilePath.IsPresent) {
-		$fileVar = "`"${installationSource}\\contextScript.ps1`""
+		$fileVar = "`"${InstallationTarget}\\contextScript.ps1`""
 	} else {
-		$fileVar = "\`"${installationSource}\\contextScript.ps1\`""
+		$fileVar = "\`"${InstallationTarget}\\contextScript.ps1\`""
 	}
 	
-    Set-ItemProperty "$baseReg\IntuneCreation" -name "(Default)" -value "Create intunewin package from here"
-    Set-ItemProperty "$baseReg\IntuneCreation" -name "Icon" -value "$installationSource\contextIcon.ico"
+    Set-ItemProperty "$baseReg\IntuneCreation" -name "(Default)" -value "Create intunewin package"
+    Set-ItemProperty "$baseReg\IntuneCreation" -name "Icon" -value "$InstallationTarget\contextIcon.ico"
     Set-ItemProperty "$baseReg\IntuneCreation\command" -name "(Default)" -value "powershell.exe -noexit -executionpolicy bypass -file $fileVar '%V''"
 
     Write-Host "All done" -f green
