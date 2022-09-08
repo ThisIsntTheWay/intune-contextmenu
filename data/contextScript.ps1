@@ -24,7 +24,7 @@ try {
 	# Check if required files exist
 	if (!(Test-Path $intuneWinTool)) {
 		# Attempt download
-		Write-Warning "IntuneWinAppUtil not found at '$intuneWinTool', attemtping download..."
+		Write-Warning "IntuneWinAppUtil not found at '$intuneWinTool', attempting download..."
 		try {
 			Invoke-RestMethod "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/raw/master/IntuneWinAppUtil.exe" `
 				-OutFile $intuneWinTool
