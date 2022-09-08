@@ -12,7 +12,6 @@ $baseReg = "HKCR:\Directory\Background\shell\"
 if ($InstallationTarget[-1] -eq '\') {
 	$InstallationTarget = $InstallationTarget.substring(0, $InstallationTarget.length -1)
 }
-$InstallationTarget
 
 try {
 	# Check if is elevated
@@ -30,9 +29,24 @@ try {
         mkdir $InstallationTarget | out-null
     }
 
-    # Unzip shit
-    Write-Host "Extracting data to $InstallationTarget..." -f yellow
-    Expand-Archive .\data.zip $InstallationTarget -Force | out-null
+    <# Unzip shit
+		Write-Host "Extracting data to $InstallationTarget..." -f yellow
+		Expand-Archive .\data.zip $InstallationTarget -Force | out-null
+	#>
+	
+	# Verify contents of data dir, copy afterwards
+	if (Test-Path .\data) {
+		@("contextIcon.ico", "contextScript.ps1") | % {
+			if (!(Test-path ".\data\$($_)")) {
+				throw "Did not find required file '$($_)' in data dir."
+			} else {
+				$temp = Copy-item ".\data\$($_)" $InstallationTarget -Force | out-null
+			}
+		}
+	} else {
+		throw "Data dir not found in location."
+	}
+	
 	
 	# Add $InstallationTarget to contextScript.ps1
 	$target = "$InstallationTarget\contextScript.ps1"
@@ -64,7 +78,7 @@ try {
 	
     Set-ItemProperty "$baseReg\IntuneCreation" -name "(Default)" -value "Create intunewin package"
     Set-ItemProperty "$baseReg\IntuneCreation" -name "Icon" -value "$InstallationTarget\contextIcon.ico"
-    Set-ItemProperty "$baseReg\IntuneCreation\command" -name "(Default)" -value "powershell.exe -executionpolicy bypass -command $fileVar -path '%V'"
+    Set-ItemProperty "$baseReg\IntuneCreation\command" -name "(Default)" -value "powershell.exe -noprofile -executionpolicy bypass -command $fileVar -path '%V'"
 
     Write-Host "All done" -f green
 } catch {
