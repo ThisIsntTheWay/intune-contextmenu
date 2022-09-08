@@ -55,16 +55,16 @@ try {
     $InstallationTarget = $InstallationTarget -replace [regex]::escape('\'), [regex]::escape('\')
     
     Write-Host "Setting properties..." -f yellow
-    Write-Host "> NOTE: If powershell reports 'illegal characters in -file', launch this script with -UseAlternateFilePath." -f yellow
+    Write-Host "> NOTE: If powershell suddendly exits, launch this script with -UseAlternateFilePath." -f yellow
 	if ($UseAlternateFilePath.IsPresent) {
-		$fileVar = "`"${InstallationTarget}\\contextScript.ps1`""
-	} else {
 		$fileVar = "\`"${InstallationTarget}\\contextScript.ps1\`""
+	} else {
+		$fileVar = "`"${InstallationTarget}\\contextScript.ps1`""
 	}
 	
     Set-ItemProperty "$baseReg\IntuneCreation" -name "(Default)" -value "Create intunewin package"
     Set-ItemProperty "$baseReg\IntuneCreation" -name "Icon" -value "$InstallationTarget\contextIcon.ico"
-    Set-ItemProperty "$baseReg\IntuneCreation\command" -name "(Default)" -value "powershell.exe -noexit -executionpolicy bypass -file $fileVar '%V''"
+    Set-ItemProperty "$baseReg\IntuneCreation\command" -name "(Default)" -value "powershell.exe -executionpolicy bypass -command $fileVar -path '%V'"
 
     Write-Host "All done" -f green
 } catch {
